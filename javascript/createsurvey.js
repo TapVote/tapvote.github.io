@@ -73,7 +73,7 @@ $(document).ready(function () {
         var jsonData = JSON.stringify(data);
         $.ajax({
             type: "POST",
-            url: AJAX_REQUEST_URL + "/createSurvey",
+            url: "/createSurvey",
             data: jsonData,
             contentType: 'application/json',
             success: function (data) {
