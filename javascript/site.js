@@ -1,4 +1,17 @@
+/* GLOBAL CONFIGURATION */
+
+// We need to determine if this client is being served from the local machine or another host
+// If it's serving from localhost, make sure that every Ajax request is sent to this machine
+// If it's being served from somewhere else, make all Ajax requests to dev.isaacdontjelindell.com (for now!)
+var AJAX_REQUEST_URL;
+if (window.document.location.port != "") {
+    AJAX_REQUEST_URL = "";
+} else {
+    AJAX_REQUEST_URL = "http://dev.isaacdontjelindell.com:8000";
+}
+
 var pageTitle;
+
 
 // usage: $.QueryString["param"]
 (function($) {
@@ -35,7 +48,6 @@ $(function() {
     function pageLoadHandler(response, status, xhr) {
         if (status == "error") {
             // show a 404
-            //$("#content").load("404.html");
             window.location.href = "/404.html";
         } else {
             // set the page title. pageTitle is declared globally in site specific JS files
