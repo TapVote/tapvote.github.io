@@ -30,15 +30,19 @@ function removeQuestion(el) {
 function createQuestion(type) {
     var questionHtml = '<div class="question rounded ' + type + '" data-question-type="'+type+'">' +
         '  <button type="button" class="remove-question-button pure-button pure-button-error" onclick="removeQuestion(this);"><i class="fa fa-times fa-lg"></i></button> ' +
-        '  <label for="question-text">Question</label><input type="text" class="question-text" />' +
-        '  <div class="answers">' +
-        '    <div class="answer">' +
-        '     <label for="answer-text">Answer Choice</label><input type="text" class="answer-text no-wrap" />' +
-        '     <button type="button" class="remove-answer-button pure-button pure-button-error" onclick="removeAnswer(this);"><i class="fa fa-times"></i></button><br>' +
-        '    </div>' +
-        '  </div>' +
-        '  <button type="button" class="add-answer-button pure-button pure-button-success pure-button-small" onclick="addAnswer(this);"><i class="fa fa-plus"></i></button>' +
-        '</div>';
+        '  <label for="question-text">Question</label><input type="text" class="question-text" />';
+
+    if (type != 'FR') {
+        questionHtml +=
+            '  <div class="answers">' +
+            '    <div class="answer">' +
+            '     <label for="answer-text">Answer Choice</label><input type="text" class="answer-text no-wrap" />' +
+            '     <button type="button" class="remove-answer-button pure-button pure-button-error" onclick="removeAnswer(this);"><i class="fa fa-times"></i></button><br>' +
+            '    </div>' +
+            '  </div>' +
+            '  <button type="button" class="add-answer-button pure-button pure-button-success pure-button-small" onclick="addAnswer(this);"><i class="fa fa-plus"></i></button>';
+    }
+    questionHtml += '</div>';
 
     $(".questions").append(questionHtml);
 }
@@ -89,8 +93,8 @@ $(document).ready(function () {
     });
 
     function shareSurvey(id) {
-        var takesurveyLink = "/?p=takesurvey&survey=" + id;
-        var adminsurveyLink = "/?p=results&survey=" + id;
+        var takesurveyLink = "?p=takesurvey&survey=" + id;
+        var adminsurveyLink = "?p=results&survey=" + id;
 
         var takesurvey = "<br> To take your survey go to " +
                          "<a href='" + takesurveyLink + "'>" +
