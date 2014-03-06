@@ -206,7 +206,6 @@ function checkFR(questionId) {
     $.ajax({
         type: 'POST',
         url: AJAX_REQUEST_URL + '/addAnswer',
-        xhrFields: { withCredentials: true },
         data: JSON.stringify(data),
         contentType: "application/json",
         success: addAnswerSuccess,
