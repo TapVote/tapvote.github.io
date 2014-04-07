@@ -147,5 +147,5 @@ function displaySurvey(surveyInfo) {
         .text(function(d) { return d.votes; });
 
 
-    setTimeout(getSurveyInfo, 100);
+    setTimeout(getSurveyInfo, 10);
 }
