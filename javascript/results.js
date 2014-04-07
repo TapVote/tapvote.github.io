@@ -5,36 +5,36 @@
 // GLOBAL PAGE VARIABLES //
 pageTitle = "Results";
 
+$(getSurveyInfo());
 
-$(function getSurveyInfo() {
+function getSurveyInfo() {
     var survey = $.QueryString['survey'];
     if (survey) {
         $.ajax({
             type:'GET',
             url: AJAX_REQUEST_URL + '/getSurveyInfo',
             data: {surveyId: survey},
-            success: displaySurveyInfo,
+            xhrFields: { withCredentials: true },
+            success: getSurveyResults,
             error: displayAjaxError
         });
+
     } else {
         askForSurveyId();
     }
-});
+}
 
-function getSurveyResults() {
+function getSurveyResults(surveyInfo) {
     var survey = $.QueryString['survey'];
-    if (survey) {
-        $.ajax({
-            type:'GET',
-            url: AJAX_REQUEST_URL + '/getSurveyResults',
-            data: {surveyId: survey},
-            success: displaySurveyResults,
-            error: displayAjaxError
-        });
-    }
-
-    // poll for updated results every second
-    setTimeout(getSurveyResults, 1000)
+    $.ajax({
+        type:'GET',
+        url: AJAX_REQUEST_URL + '/getSurveyResults',
+        data: {surveyId: survey},
+        xhrFields: { withCredentials: true },
+        success: function (surveyResults) { combineSurveyInfo(surveyInfo, surveyResults); },
+        error: displayAjaxError
+    });
+    //setTimeout(getSurveyInfo, 2000);
 }
 
 function displayAjaxError(error) {
@@ -69,64 +69,83 @@ function redirectToSurvey() {
     window.location.href="?p=results&survey=" + $("#survey-id").val();
 }
 
-function displaySurveyResults(results) {
-    $.each(results, function (key, value) {
-        var elementId = '#answer-' + key;
-
-        var resultSpan = $(elementId).find("div.answer-result");
-        resultSpan.text(value);
-    });
-    console.log(results);
-}
-
-function displaySurveyInfo(results) {
-    var titleDiv = $("#survey-title");
-
-    var el = $("<div></div>");
-    el.text(results['title']);
-    el.addClass('survey-title');
-    titleDiv.append(el);
-
-    var questionsDiv = $("#survey-questions");
-    questionsDiv.addClass("questions");
-    var questions = results['questions'];
-    $.each(questions, function (index, question) {
-        // create a div for each question in questions
-        var questionDiv = $("<div></div>");
-        questionDiv.attr('id', 'question-'+question['id']);
-        questionDiv.attr('class', 'question rounded');
-
-        var questionTitle = $("<div></div>");
-        questionTitle.text(question['value']);
-        questionTitle.addClass('question-title');
-        questionDiv.append(questionTitle);
-
-        var answers = question['answers'];
-        $.each(answers, function (index, answer) {
-            var answerDiv = $("<div></div>");
-            answerDiv.attr('id', 'answer-'+answer['id']);
-            answerDiv.attr('class', 'answer rounded');
-
-            // create the div that holds the textual value of this answer
-            var questionValue = $("<div></div>");
-            questionValue.attr("class", "answer-value");
-            questionValue.text(answer['value']);
-
-            // create the div that holds the count of responses for this answer
-            var answerResultDiv  = $("<div></div>");
-            answerResultDiv.attr("class", "answer-result");
-
-            answerDiv.append(questionValue);
-            answerDiv.append(answerResultDiv);
-
-            questionDiv.append(answerDiv);
-        });
-
-        questionsDiv.append(questionDiv);
+function combineSurveyInfo(surveyInfo, surveyResults) {
+    // combine the survey info (containing questions and answer options) with the results
+    // (containing the number of votes for each answer)
+    $.each(surveyInfo.questions, function (_, question) {
+        $.each(question.answers, function (_, answer) {
+            answer.votes = surveyResults[answer.id]
+        })
     });
 
-    console.log(results);
-    getSurveyResults();
+    // surveyInfo now has all information, including results (# of votes)
+    displaySurvey(surveyInfo)
 }
 
+function displaySurvey(surveyInfo) {
+    console.log(surveyInfo);
 
+    var answerList = [];
+
+    // D3 scaling function - will be used later
+    var max = 0;
+    $.each(surveyInfo.questions, function(index, question) {
+        $.each(question.answers, function(i, answer) {
+            max = Math.max(max, answer.votes);
+            answerList.push(answer);
+        })
+    });
+    if (!max) max = 0;
+
+    var x = d3.scale.linear()
+        .domain([0, max])
+        .range([0, 420]);
+
+
+    var questions = d3.select("#survey-questions .questions")
+        .selectAll("div.question")
+        .data(surveyInfo.questions);
+
+    var questionDivs = questions.enter().append("div") // this creates the question divs
+        .html(function(d) { return "<div class='question-title'>" + d.value + "</div>"; })
+        .attr("class", "question chart rounded");
+
+    questions.exit().remove();
+
+    var answers = questionDivs
+        .selectAll("div.answer")
+        .data(function(d) { return d.answers; });
+
+    var answerDivs = answers.enter().append("div") // this creates the nested answer divs
+        .text(function(d) { return d.value; })
+        .attr("class", "answer");
+
+    answers.exit().remove();
+    var answerResults = answerDivs
+        .selectAll("div.bar")
+        .data(function(d) { return [d] });
+
+    answerResults.enter().append("div")
+        .style("width", function(d) {
+                   return x(d.votes) + "px";
+               })
+        .text(function(d) { return d.votes; })
+        .attr("class", "bar");
+
+    answerResults.exit().remove();
+
+    // handle realtime updates of vote totals
+    d3.select("#survey-questions .questions")
+        .selectAll("div.question")
+        .selectAll("div.answer")
+        .selectAll("div.bar")
+        .data(answerList, function(d) { return d.id; })
+        .transition()
+        .style("width", function(d) {
+                   return x(d.votes) + "px";
+               })
+        .text(function(d) { return d.votes; });
+
+
+    setTimeout(getSurveyInfo, 100);
+}
