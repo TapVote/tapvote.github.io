@@ -43,6 +43,8 @@ function displayAjaxError(error) {
         askForSurveyId();
     } else {
         console.log(error);
+
+        setTimeout(getSurveyInfo, 1000);
     }
 }
 
@@ -147,5 +149,5 @@ function displaySurvey(surveyInfo) {
         .text(function(d) { return d.votes; });
 
 
-    setTimeout(getSurveyInfo, 10);
+    setTimeout(getSurveyInfo, 1000);
 }
